@@ -1,0 +1,71 @@
+---
+title: "Lab 1 Practice"
+author: "Olivia Hemond"
+format: 
+  html:
+    code-fold: true
+    toc: true
+execute: 
+  echo: true
+  message: false
+  warning: false
+editor: visual
+---
+
+```{r setup}
+library(tidyverse)
+library(gapminder)
+```
+
+# Load, Clean, and Select Desired Data
+
+```{r}
+gapminder_df <- gapminder %>% janitor::clean_names()
+```
+
+```{r}
+gdp_df <- gapminder_df %>% 
+  group_by(year, continent) %>% 
+  summarize(avg_gdp = weighted.mean(gdp_percap, pop)) %>% # weight the gdps by country pop
+  ungroup()
+```
+
+# Initial Plot
+
+```{r}
+ggplot() +
+  geom_point(data = gdp_df, aes(x = year, y = avg_gdp, color = continent)) +
+  #geom_point(data = gapminder_df, aes(x = year, y = gdp_percap, color = continent), alpha = 0.2) +
+  theme_minimal()
+```
+
+# Plot with Log-Transformation of GDP
+
+```{r}
+ggplot() +
+  geom_point(data = gdp_df, aes(x = year, y = avg_gdp, color = continent)) +
+  scale_y_log10() +
+  theme_minimal()
+```
+
+# Linear Regression
+
+```{r}
+m.1 <- lm(gdp_percap ~ continent + year, data = gapminder_df)
+summary(m.1)
+# multiple R2 = 0.28
+
+m.2 <- lm(log10(gdp_percap) ~ continent + year, data = gapminder_df)
+summary(m.2)
+# multiple R2 = 0.49
+# choosing model with log-transformed gdp
+
+```
+
+# Writeup
+
+GDP per capita tends to increase over time across all continents, and the GDP for Europe, Oceana, and the Americas is consistently higher than the GDP for Africa and Asia over this time period. I chose the log-transformed model because it explained more of the variation in my data (R2 of 0.49 compared to 0.28 on the initial model).
+
+All coefficients in my model were statistically significant. The "reference" continent in my model is Africa. Each coefficient value represents, for each other continent, what the difference in log10(GDP) is between Africa and that continent. The "year" coefficient represents the increase in log10(GDP) per year, holding other factors constant.
+
+For most continents, a linear model seems to visually fit the data well. For others, such as Africa, the data do not seem to follow a linear relationship. There might be other factors at play that could warrant the use of more complex models than linear regression.
